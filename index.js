@@ -1,11 +1,11 @@
-import express from 'express';
-import bodyParser from 'body-parser';
 import { graphqlExpress, graphiqlExpress } from 'apollo-server-express';
 import { makeExecutableSchema } from 'graphql-tools';
 import { fileLoader, mergeTypes, mergeResolvers } from 'merge-graphql-schemas';
 import { execute, subscribe } from 'graphql';
 import { createServer } from 'http';
 import { SubscriptionServer } from 'subscriptions-transport-ws';
+import express from 'express';
+import bodyParser from 'body-parser';
 import path from 'path';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
@@ -67,12 +67,19 @@ app.use(
   })),
 );
 
-app.use('/graphiql', graphiqlExpress({ endpointURL: graphqlEndpoint }));
+app.use(
+  '/graphiql',
+  graphiqlExpress({
+    endpointURL: graphqlEndpoint,
+    subscriptionsEndpoint: 'ws://localhost:8080/subscriptions',
+  }),
+);
 
 const server = createServer(app);
 
-models.sequelize.sync().then(() => {
+models.sequelize.sync({}).then(() => {
   server.listen(8080, () => {
+    console.log('🚀  Server ready on port 8080.');
     // eslint-disable-next-line no-new
     new SubscriptionServer(
       {
