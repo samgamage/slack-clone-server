@@ -77,7 +77,7 @@ app.use(
 
 const server = createServer(app);
 
-models.sequelize.sync({}).then(() => {
+models.sequelize.sync().then(() => {
   server.listen(8080, () => {
     console.log('🚀  Server ready on port 8080.');
     // eslint-disable-next-line no-new

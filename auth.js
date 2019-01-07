@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken';
-import _ from 'lodash';
+import pick from 'lodash/pick';
 import bcrypt from 'bcrypt';
 
 export const createTokens = async (user, secret, secret2) => {
   const createToken = jwt.sign(
     {
-      user: _.pick(user, ['id', 'username']),
+      user: pick(user, ['id', 'username']),
     },
     secret,
     {
@@ -15,7 +15,7 @@ export const createTokens = async (user, secret, secret2) => {
 
   const createRefreshToken = jwt.sign(
     {
-      user: _.pick(user, 'id'),
+      user: pick(user, 'id'),
     },
     secret2,
     {
