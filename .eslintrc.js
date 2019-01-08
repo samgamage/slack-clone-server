@@ -9,5 +9,6 @@ module.exports = {
   },
   rules: {
     'implicit-arrow-linebreak': 0,
+    'no-console': 0, // for development
   },
 };
