@@ -2,7 +2,7 @@ type Message {
   id: Int!
   text: String!
   user: User!
-  channel: Channel!
+  channel: Channel
   created_at: String!
 }
 

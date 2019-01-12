@@ -1,8 +1,9 @@
 import { fileLoader, mergeResolvers, mergeTypes } from 'merge-graphql-schemas';
 import path from 'path';
 import jwt from 'jsonwebtoken';
-
 import { GraphQLServer } from 'graphql-yoga';
+import { makeExecutableSchema } from 'graphql-tools';
+
 import { refreshTokens } from './auth';
 import models from './models';
 
@@ -12,6 +13,11 @@ const SECRET2 = 'asdmklmflkmlkm121kl23maksasdasdlkm';
 const typeDefs = mergeTypes(fileLoader(path.join(__dirname, './schema')));
 
 const resolvers = mergeResolvers(fileLoader(path.join(__dirname, './resolvers')));
+
+const schema = makeExecutableSchema({
+  typeDefs,
+  resolvers,
+});
 
 const addUser = async (req, res, next) => {
   const token = req.headers['x-token'];
@@ -33,18 +39,16 @@ const addUser = async (req, res, next) => {
   next();
 };
 
-const context = req => ({
+const context = (req, conn) => ({
   ...req,
   models,
   SECRET,
   SECRET2,
+  ...conn,
 });
 
-// passing in the context as an object makes it undefined
-// solution: pass in the context as a function with the request
 const server = new GraphQLServer({
-  typeDefs,
-  resolvers,
+  schema,
   context,
 });
 
