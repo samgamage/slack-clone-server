@@ -1,4 +1,4 @@
-import { PubSub, withFilter } from 'graphql-subscriptions';
+import { PubSub, withFilter } from 'graphql-yoga';
 import requiresAuth from '../permissions';
 
 const pubsub = new PubSub();

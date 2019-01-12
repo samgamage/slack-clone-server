@@ -1,15 +1,8 @@
-import { graphqlExpress, graphiqlExpress } from 'apollo-server-express';
-import { makeExecutableSchema } from 'graphql-tools';
-import { fileLoader, mergeTypes, mergeResolvers } from 'merge-graphql-schemas';
-import { execute, subscribe } from 'graphql';
-import { createServer } from 'http';
-import { SubscriptionServer } from 'subscriptions-transport-ws';
-import express from 'express';
-import bodyParser from 'body-parser';
+import { fileLoader, mergeResolvers, mergeTypes } from 'merge-graphql-schemas';
 import path from 'path';
-import cors from 'cors';
 import jwt from 'jsonwebtoken';
 
+import { GraphQLServer } from 'graphql-yoga';
 import { refreshTokens } from './auth';
 import models from './models';
 
@@ -20,14 +13,20 @@ const typeDefs = mergeTypes(fileLoader(path.join(__dirname, './schema')));
 
 const resolvers = mergeResolvers(fileLoader(path.join(__dirname, './resolvers')));
 
-const schema = makeExecutableSchema({
-  typeDefs,
-  resolvers,
+const context = req => ({
+  models,
+  user: req.user,
+  SECRET,
+  SECRET2,
 });
 
-const app = express();
-
-app.use(cors('*'));
+// passing in the context as an object makes it undefined
+// solution: pass in the context as a function with the request
+const server = new GraphQLServer({
+  typeDefs,
+  resolvers,
+  context,
+});
 
 const addUser = async (req, res, next) => {
   const token = req.headers['x-token'];
@@ -49,48 +48,11 @@ const addUser = async (req, res, next) => {
   next();
 };
 
-app.use(addUser);
-
-const graphqlEndpoint = '/graphql';
-
-app.use(
-  graphqlEndpoint,
-  bodyParser.json(),
-  graphqlExpress(req => ({
-    schema,
-    context: {
-      models,
-      user: req.user,
-      SECRET,
-      SECRET2,
-    },
-  })),
-);
-
-app.use(
-  '/graphiql',
-  graphiqlExpress({
-    endpointURL: graphqlEndpoint,
-    subscriptionsEndpoint: 'ws://localhost:8080/subscriptions',
-  }),
-);
-
-const server = createServer(app);
+server.express.use(addUser);
 
 models.sequelize.sync().then(() => {
-  server.listen(8080, () => {
-    console.log('🚀  Server ready on port 8080.');
-    // eslint-disable-next-line no-new
-    new SubscriptionServer(
-      {
-        execute,
-        subscribe,
-        schema,
-      },
-      {
-        server,
-        path: '/subscriptions',
-      },
-    );
-  });
+  server.start({ port: 8080 }, ({ port }) =>
+    console.log(
+      `========================================\n🚀  Server is running on localhost:${port}\n========================================`,
+    ));
 });
