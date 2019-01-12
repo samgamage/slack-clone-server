@@ -13,21 +13,6 @@ const typeDefs = mergeTypes(fileLoader(path.join(__dirname, './schema')));
 
 const resolvers = mergeResolvers(fileLoader(path.join(__dirname, './resolvers')));
 
-const context = req => ({
-  models,
-  user: req.user,
-  SECRET,
-  SECRET2,
-});
-
-// passing in the context as an object makes it undefined
-// solution: pass in the context as a function with the request
-const server = new GraphQLServer({
-  typeDefs,
-  resolvers,
-  context,
-});
-
 const addUser = async (req, res, next) => {
   const token = req.headers['x-token'];
   if (token) {
@@ -48,10 +33,32 @@ const addUser = async (req, res, next) => {
   next();
 };
 
+const context = req => ({
+  ...req,
+  models,
+  SECRET,
+  SECRET2,
+});
+
+// passing in the context as an object makes it undefined
+// solution: pass in the context as a function with the request
+const server = new GraphQLServer({
+  typeDefs,
+  resolvers,
+  context,
+});
+
 server.express.use(addUser);
 
+const options = {
+  port: 8080,
+  endpoint: '/graphql',
+  subscriptions: '/subscriptions',
+  playground: '/playground',
+};
+
 models.sequelize.sync().then(() => {
-  server.start({ port: 8080 }, ({ port }) =>
+  server.start(options, ({ port }) =>
     console.log(
       `========================================\n🚀  Server is running on localhost:${port}\n========================================`,
     ));

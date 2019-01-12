@@ -31,17 +31,17 @@ export default {
       )),
   },
   Mutation: {
-    createMessage: requiresAuth.createResolver(async (parent, args, { models, user }) => {
+    createMessage: requiresAuth.createResolver(async (parent, args, { models, request }) => {
       try {
         const message = await models.Message.create({
           ...args,
-          userId: user.id,
+          userId: request.user.id,
         });
 
         const asyncFunc = async () => {
           const currentUser = await models.User.findOne({
             where: {
-              id: user.id,
+              id: request.user.id,
             },
           });
 
