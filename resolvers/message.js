@@ -40,17 +40,17 @@ export default {
     },
   },
   Message: {
-    user: ({ user, userId }, args, { models }) => {
+    user: ({ user, userId }, args, ctx) => {
       if (user) {
         return user;
       }
 
-      return models.User.findOne({ where: { id: userId } }, { raw: true });
+      return ctx.models.User.findOne({ where: { id: userId } }, { raw: true });
     },
   },
   Query: {
-    messages: requiresAuth.createResolver(async (parent, { channelId }, { models }) =>
-      models.Message.findAll(
+    messages: requiresAuth.createResolver(async (parent, { channelId }, ctx) =>
+      ctx.models.Message.findAll(
         { order: [['created_at', 'ASC']], where: { channelId } },
         { raw: true },
       )),
