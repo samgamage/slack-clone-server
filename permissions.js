@@ -11,8 +11,8 @@ const createResolver = (resolver) => {
 };
 
 // requiresAuth
-export default createResolver((parent, args, { user }) => {
-  if (!user || !user.id) {
+export default createResolver((parent, args, { request }) => {
+  if (!request.user || !request.user.id) {
     throw new Error('Not authenticated');
   }
 });

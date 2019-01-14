@@ -1,11 +1,9 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import { graphqlExpress, graphiqlExpress } from 'apollo-server-express';
-import { makeExecutableSchema } from 'graphql-tools';
-import { fileLoader, mergeTypes, mergeResolvers } from 'merge-graphql-schemas';
+import { fileLoader, mergeResolvers, mergeTypes } from 'merge-graphql-schemas';
 import path from 'path';
-import cors from 'cors';
 import jwt from 'jsonwebtoken';
+import { GraphQLServer } from 'graphql-yoga';
+import { makeExecutableSchema } from 'graphql-tools';
+
 import { refreshTokens } from './auth';
 import models from './models';
 
@@ -20,10 +18,6 @@ const schema = makeExecutableSchema({
   typeDefs,
   resolvers,
 });
-
-const app = express();
-
-app.use(cors('*'));
 
 const addUser = async (req, res, next) => {
   const token = req.headers['x-token'];
@@ -45,26 +39,31 @@ const addUser = async (req, res, next) => {
   next();
 };
 
-app.use(addUser);
+const context = (req, conn) => ({
+  ...req,
+  models,
+  SECRET,
+  SECRET2,
+  ...conn,
+});
 
-const graphqlEndpoint = '/graphql';
+const server = new GraphQLServer({
+  schema,
+  context,
+});
 
-app.use(
-  graphqlEndpoint,
-  bodyParser.json(),
-  graphqlExpress(req => ({
-    schema,
-    context: {
-      models,
-      user: req.user,
-      SECRET,
-      SECRET2,
-    },
-  })),
-);
+server.express.use(addUser);
 
-app.use('/graphiql', graphiqlExpress({ endpointURL: graphqlEndpoint }));
+const options = {
+  port: 8080,
+  endpoint: '/graphql',
+  subscriptions: '/subscriptions',
+  playground: '/playground',
+};
 
-models.sequelize.sync().then(() => {
-  app.listen(8080);
+models.sequelize.sync({ force: true }).then(() => {
+  server.start(options, ({ port }) =>
+    console.log(
+      `========================================\n🚀  Server is running on localhost:${port}\n========================================`,
+    ));
 });
