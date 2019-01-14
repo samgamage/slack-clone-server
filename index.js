@@ -61,7 +61,7 @@ const options = {
   playground: '/playground',
 };
 
-models.sequelize.sync().then(() => {
+models.sequelize.sync({ force: true }).then(() => {
   server.start(options, ({ port }) =>
     console.log(
       `========================================\n🚀  Server is running on localhost:${port}\n========================================`,
